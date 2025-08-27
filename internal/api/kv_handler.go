@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -22,6 +23,7 @@ func NewKVHandler(kvStore store.KVStore, logger *log.Logger) *KVHandler {
 	}
 }
 
+// HandleGetKvByKey retrieves a key-value pair from the store.
 func (h *KVHandler) HandleGetKvByKey(w http.ResponseWriter, r *http.Request) {
 	key := chi.URLParam(r, "key")
 
@@ -30,14 +32,23 @@ func (h *KVHandler) HandleGetKvByKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value := "mock_" + key
+	kv, err := h.KVStore.GetKvByKey(key)
 
-	data := map[string]string{
-		"key":   key,
-		"value": value,
+	if err != nil {
+		h.Logger.Printf("[HandleGetKvByKey] error getting kv by key: %v", err)
+
+		if errors.Is(err, store.ErrKeyNotFound) {
+			utils.SendErrorResponse(w, http.StatusNotFound, "key not found")
+			return
+		}
+
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error")
+		return
 	}
 
-	utils.SendJSONResponse(w, http.StatusOK, data)
+	utils.SendJSONResponse(w, http.StatusOK, map[string]any{
+		"kv": kv,
+	})
 }
 
 // HandleUpsertKv creates or updates a key-value pair in the store.

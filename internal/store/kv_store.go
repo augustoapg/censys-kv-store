@@ -1,6 +1,9 @@
 package store
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type KV struct {
 	Key       string     `json:"key"`
@@ -22,6 +25,22 @@ func NewInMemoryKVStore() KVStore {
 
 type KVStore interface {
 	UpsertKv(kv *KV) (KV, error)
+	GetKvByKey(key string) (KV, error)
+}
+
+var ErrKeyNotFound = errors.New("key not found")
+
+// GetKvByKey retrieves a key-value pair from the store.
+// If key is not found, or is soft deleted, return an error.
+// Returns the key-value pair.
+func (s *InMemoryKVStore) GetKvByKey(key string) (KV, error) {
+	kv, ok := s.store[key]
+
+	if !ok || kv.DeletedAt != nil {
+		return KV{}, ErrKeyNotFound
+	}
+
+	return kv, nil
 }
 
 // UpsertKv creates or updates a key-value pair in the store.
