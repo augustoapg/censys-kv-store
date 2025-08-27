@@ -67,6 +67,14 @@ func (h *KVHandler) HandleUpsertKv(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// key must be present and trimmed before saving it
+	kv.Key = strings.TrimSpace(kv.Key)
+	if kv.Key == "" {
+		h.Logger.Printf("[HandleUpsertKv] missing key")
+		utils.SendErrorResponse(w, http.StatusBadRequest, "key must be a valid string")
+		return
+	}
+
 	kv, err = h.KVStore.UpsertKv(&kv)
 	if err != nil {
 		h.Logger.Printf("[HandleUpsertKv] error upserting kv: %v", err)
