@@ -11,6 +11,7 @@ func SetupRoutes(app *app.Application) *chi.Mux {
 	r.Route("/kv", func(r chi.Router) {
 		r.Get("/{key}", app.KVHandler.HandleGetKvByKey)
 		r.Post("/", app.KVHandler.HandleUpsertKv)
+		r.Delete("/{key}", app.KVHandler.HandleDeleteKvByKey)
 	})
 
 	return r

@@ -26,6 +26,7 @@ func NewInMemoryKVStore() KVStore {
 type KVStore interface {
 	UpsertKv(kv *KV) (KV, error)
 	GetKvByKey(key string) (KV, error)
+	DeleteKvByKey(key string) error
 }
 
 var ErrKeyNotFound = errors.New("key not found")
@@ -65,4 +66,22 @@ func (s *InMemoryKVStore) UpsertKv(kv *KV) (KV, error) {
 	}
 
 	return s.store[key], nil
+}
+
+// DeleteKvByKey soft deletes a key-value pair from the store.
+// Returns an error if the key is not found or already soft deleted.
+func (s *InMemoryKVStore) DeleteKvByKey(key string) error {
+	kv, err := s.GetKvByKey(key)
+
+	if err != nil {
+		return err
+	}
+
+	now := time.Now()
+	kv.DeletedAt = &now
+	kv.UpdatedAt = now
+
+	s.store[key] = kv
+
+	return nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/augustoapg/censysKvStore/internal/store"
 	"github.com/augustoapg/censysKvStore/internal/utils"
@@ -24,8 +25,10 @@ func NewKVHandler(kvStore store.KVStore, logger *log.Logger) *KVHandler {
 }
 
 // HandleGetKvByKey retrieves a key-value pair from the store.
+// If key not found or if soft deleted, return error
+// Returns 200 with key-value
 func (h *KVHandler) HandleGetKvByKey(w http.ResponseWriter, r *http.Request) {
-	key := chi.URLParam(r, "key")
+	key := strings.TrimSpace(chi.URLParam(r, "key"))
 
 	if key == "" {
 		utils.SendErrorResponse(w, http.StatusBadRequest, "key is required")
@@ -53,7 +56,7 @@ func (h *KVHandler) HandleGetKvByKey(w http.ResponseWriter, r *http.Request) {
 
 // HandleUpsertKv creates or updates a key-value pair in the store.
 // If the key is soft deleted, it will be restored.
-// Returns the created or updated key-value pair.
+// Returns 200 with the created or updated key-value pair.
 func (h *KVHandler) HandleUpsertKv(w http.ResponseWriter, r *http.Request) {
 	var kv store.KV
 
@@ -76,11 +79,27 @@ func (h *KVHandler) HandleUpsertKv(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// HandleDeleteKvByKey deletes key-value pair based on key
+// If key not found or already soft deleted, return error
+// Return 204
 func (h *KVHandler) HandleDeleteKvByKey(w http.ResponseWriter, r *http.Request) {
-	key := chi.URLParam(r, "key")
+	key := strings.TrimSpace(chi.URLParam(r, "key"))
 
 	if key == "" {
 		utils.SendErrorResponse(w, http.StatusBadRequest, "key is required")
+		return
+	}
+
+	err := h.KVStore.DeleteKvByKey(key)
+
+	if err != nil {
+		h.Logger.Printf("[HandleDeleteKvByKey] error deleting kv: %v", err)
+		if errors.Is(err, store.ErrKeyNotFound) {
+			utils.SendErrorResponse(w, http.StatusNotFound, "key not found")
+			return
+		}
+
+		utils.SendErrorResponse(w, http.StatusInternalServerError, "internal server error")
 		return
 	}
 
