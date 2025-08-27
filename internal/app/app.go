@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/augustoapg/censysKvStore/internal/api"
+	"github.com/augustoapg/censysKvStore/internal/store"
 )
 
 type Application struct {
@@ -14,9 +15,10 @@ type Application struct {
 
 func NewApplication() (*Application, error) {
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+	store := store.NewInMemoryKVStore()
 
 	return &Application{
 		Logger:    logger,
-		KVHandler: api.NewKVHandler(),
+		KVHandler: api.NewKVHandler(store, logger),
 	}, nil
 }

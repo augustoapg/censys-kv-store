@@ -5,14 +5,14 @@ import (
 	"net/http"
 )
 
-func SendJSONResponse(w http.ResponseWriter, statusCode int, data interface{}) {
+func SendJSONResponse(w http.ResponseWriter, statusCode int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
 }
 
 func SendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
-	response := map[string]interface{}{
+	response := map[string]any{
 		"error": message,
 	}
 	SendJSONResponse(w, statusCode, response)
