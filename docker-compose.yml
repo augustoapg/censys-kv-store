@@ -5,5 +5,12 @@ services:
       - "8080:8080"
     container_name: censys-kv-store
     restart: unless-stopped
+    networks:
+      - censys-network
     environment:
       - PORT=8080
+
+# Network for the kv-store service to be able to receive requests from the test client
+networks:
+  censys-network:
+    external: true
