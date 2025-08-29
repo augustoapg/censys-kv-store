@@ -10,7 +10,11 @@ This service provides the following REST API endpoints to store, retrieve, and d
 
 The service uses in-memory storage with soft delete functionality (records are marked as deleted but not removed).
 
-The service was created with modularity in mind, to make it easier to test and extend, such as switching to a different transport layer or storage backend.
+## Design Decisions
+
+- The service soft deletes records (they are marked as deleted but not removed). I did it intentionally because I believe it is a more real-world scenario. It would be easy to change to a hard delete if needed.
+- When overwriting a soft deleted record, the service will undelete it (by emptying the `deleted_at` field) and update the value. In a real-world scenario, this could be handled better to keep track of the history of the record.
+- All error response bodies will return JSON objects with `error` as the key.
 
 ## Testing Instructions
 
